@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+       Copyright 2006-2017 the original author or authors.
+
+       Licensed under the Apache License, Version 2.0 (the "License");
+       you may not use this file except in compliance with the License.
+       You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+       Unless required by applicable law or agreed to in writing, software
+       distributed under the License is distributed on an "AS IS" BASIS,
+       WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+       See the License for the specific language governing permissions and
+       limitations under the License.
+
+-->
+<!DOCTYPE generatorConfiguration PUBLIC "-//mybatis.org//DTD MyBatis Generator Configuration 1.0//EN" "http://mybatis.org/dtd/mybatis-generator-config_1_0.dtd">
+<!--
+生成mapper命令
+java -jar mybatis.jar -configfile generatorConfig.xml -overwrite
+-->
+<generatorConfiguration>
+	<classPathEntry location="C:\Users\zengxiaowei\.m2\repository\mysql\mysql-connector-java\5.1.39\mysql-connector-java-5.1.39.jar" />
+ 	<context id="appInfo" targetRuntime="MyBatis3">
+	    <property name="javaFileEncoding" value="UTF-8"/>
+ 		<!-- 生成一对一配置 -->
+		<plugin type="cc.bandaotixi.plugins.OneToOnePlugin"></plugin>
+		<!-- 生成一对多配置 -->
+		<plugin type="cc.bandaotixi.plugins.OneToManyPlugin"></plugin>
+		<plugin type="cc.bandaotixi.plugins.BatchInsertPlugin"></plugin>
+		<plugin type="cc.bandaotixi.plugins.BatchUpdatePlugin"></plugin>
+ 		<commentGenerator type="cc.bandaotixi.plugins.BDTCommentGenerator">
+ 			<property name="javaFileEncoding" value="UTF-8"/>
+	        <property name="suppressDate" value="true"/>
+	        <property name="suppressAllComments" value="false" />
+	    </commentGenerator>
+ 		<jdbcConnection connectionURL="jdbc:mysql://www.bandaotixi.cc:3306/bymin-user?useUnicode=true&amp;characterEncoding=utf-8&amp;useSSL=false" driverClass="com.mysql.jdbc.Driver" password="10020525Xi." userId="bandaotixi" />
+ 		<!-- 数据表对应的实体层 -->
+		<javaModelGenerator targetPackage="store.bymin.user.entity"
+			targetProject="bymin-user-service/src/main/java">
+			<property name="enableSubPackages" value="true" />
+			<property name="trimStrings" value="true" />
+		</javaModelGenerator>
+		
+ 		<sqlMapGenerator targetPackage="store.bymin.user.mapper" targetProject="bymin-user-core/src/main/java">
+ 			<property name="enableSubPackages" value="true" /> 
+			<property name="isMergeable" value="false"/>
+ 		</sqlMapGenerator>
+ 		
+ 		<!-- 在ibatis2 中是dao层，但在mybatis3中，其实就是mapper接口 -->
+ 		<javaClientGenerator type="XMLMAPPER" targetPackage="store.bymin.user.dao" targetProject="bymin-user-core/src/main/java">
+			<property name="enableSubPackages" value="true" />
+		</javaClientGenerator>
+		
+ 		<table tableName="dict" domainObjectName="Dict">
+ 			<generatedKey column="dict_id" sqlStatement="MySql" identity="true" />
+ 			<oneToMany mappingTable="dict" column="dict_id" joinColumn="parent_id" />
+ 		</table>
+ 		<table tableName="resource" domainObjectName="Resource">
+ 			<generatedKey column="resource_id" sqlStatement="MySql" identity="true" />
+ 			<oneToMany mappingTable="resource_role" column="resource_id" joinColumn="resource_id" where="resource_role.status=1" />
+ 		</table>
+ 		<table tableName="user" domainObjectName="User">
+ 			<generatedKey column="user_id" sqlStatement="MySql" identity="true" />
+ 			<oneToMany mappingTable="role_user" column="user_id" joinColumn="user_id" where="role_user.status=1" />
+ 		</table>
+ 		<table tableName="role" domainObjectName="Role">
+ 			<generatedKey column="role_id" sqlStatement="MySql" identity="true" />
+ 			<oneToMany mappingTable="resource_role" column="role_id" joinColumn="role_id" where="resource_role.status=1" />
+ 		</table>
+ 		<table tableName="resource_role" domainObjectName="ResourceRole">
+ 			<generatedKey column="id" sqlStatement="MySql" identity="true" />
+			<oneToOne mappingTable="resource" column="resource_id" joinColumn="resource_id" />
+			<oneToOne mappingTable="role" column="role_id" joinColumn="role_id" />
+ 		</table>
+ 		<table tableName="role_user" domainObjectName="RoleUser">
+ 			<generatedKey column="id" sqlStatement="MySql" identity="true" />
+			<oneToOne mappingTable="user" column="user_id" joinColumn="user_id" />
+			<oneToOne mappingTable="role" column="role_id" joinColumn="role_id" />
+ 		</table>
+ 		
+ 	</context>
+</generatorConfiguration>

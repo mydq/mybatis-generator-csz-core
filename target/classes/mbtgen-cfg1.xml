@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+       Copyright 2006-2017 the original author or authors.
+
+       Licensed under the Apache License, Version 2.0 (the "License");
+       you may not use this file except in compliance with the License.
+       You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+       Unless required by applicable law or agreed to in writing, software
+       distributed under the License is distributed on an "AS IS" BASIS,
+       WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+       See the License for the specific language governing permissions and
+       limitations under the License.
+
+-->
+<!DOCTYPE generatorConfiguration
+PUBLIC "-//mybatis.org//DTD MyBatis Generator Configuration 1.0//EN"
+"https://www.bandaotixi.cc/file/mybatis-generator-config_1_0.dtd">
+<generatorConfiguration>
+	<classPathEntry location="C:\Users\zengxiaowei\.m2\repository\mysql\mysql-connector-java\5.1.39\mysql-connector-java-5.1.39.jar" />
+	<context id="oracel_tables" targetRuntime="MyBatis3">
+		<!-- 生成一对一配置 -->
+		<plugin type="cc.bandaotixi.plugins.OneToOnePlugin"></plugin>
+		<!-- 生成一对多配置 -->
+		<plugin type="cc.bandaotixi.plugins.OneToManyPlugin"></plugin>
+		<plugin type="cc.bandaotixi.plugins.BatchInsertPlugin"></plugin>
+		<plugin type="cc.bandaotixi.plugins.BatchUpdatePlugin"></plugin>
+		<!-- 数据库连接 -->
+		<jdbcConnection driverClass="com.mysql.jdbc.Driver"
+			connectionURL="jdbc:mysql://192.168.248.219:3307/font-cloud?useUnicode=true&amp;characterEncoding=UTF-8&amp;zeroDateTimeBehavior=convertToNull"
+			userId="root" password="abcd4321" />
+
+		<!-- 数据表对应的实体层 -->
+		<javaModelGenerator targetPackage="org.ihansen.jsmta.domain"
+			targetProject="src/main/java">
+			<property name="enableSubPackages" value="true" />
+			<property name="trimStrings" value="true" />
+		</javaModelGenerator>
+
+		<!-- sql mapper 隐射配置文件(xml配置文件) -->
+		<sqlMapGenerator targetPackage="org.ihansen.jsmta.mapper"
+			targetProject="src/main/resources">
+			<property name="enableSubPackages" value="true" />
+			<!-- 此属性表示若已存在xml是否和原文件合并 -->
+			<property name="isMergeable" value="false" />
+		</sqlMapGenerator>
+
+		<!-- 在ibatis2 中是dao层，但在mybatis3中，其实就是mapper接口 -->
+		<javaClientGenerator type="XMLMAPPER"
+			targetPackage="org.ihansen.jsmta.domain.operate" targetProject="src/main/java">
+			<property name="enableSubPackages" value="true" />
+		</javaClientGenerator>
+
+		<!-- 要对那些数据表进行生成操作，必须要有一个 -->
+		<table tableName="t_font_tag" domainObjectName="FontTag" />
+		<table tableName="t_tag" domainObjectName="Tag">
+			<oneToOne mappingTable="t_font_tag" column="tag_id" joinColumn="tag_id" where="t_tag.is_deleted=0" />
+			<oneToMany mappingTable="t_tag" column="tag_id" joinColumn="parent_tag_id" where="t_tag.is_deleted=0" />
+		</table>
+	</context>
+</generatorConfiguration>
