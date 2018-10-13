@@ -20,7 +20,7 @@
             <dependencies>
                 <dependency>
                     <groupId>com.generator</groupId>
-                    <artifactId>mybatis-generator</artifactId>
+                    <artifactId>mybatis-generator-csz-core</artifactId>
                     <version>1.0.0</version>
                 </dependency>
             </dependencies>

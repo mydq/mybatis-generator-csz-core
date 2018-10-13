@@ -120,6 +120,7 @@ org\mybatis\generator\plugins\ToStringPlugin.class
 org\mybatis\generator\codegen\ibatis2\sqlmap\SqlMapGenerator.class
 org\mybatis\generator\codegen\mybatis3\javamapper\elements\sqlprovider\ProviderDeleteByExampleMethodGenerator.class
 org\mybatis\generator\plugins\FluentBuilderMethodsPlugin.class
+org\asia\mybatis\generator\plugins\OldBatchInsertPlugin.class
 org\mybatis\generator\api\GeneratedFile.class
 org\mybatis\generator\codegen\mybatis3\xmlmapper\elements\AbstractXmlElementGenerator.class
 org\mybatis\generator\api\IntrospectedTable$InternalAttribute.class

@@ -17,7 +17,7 @@
     <plugin type="org.asia.mybatis.generator.plugins.OneToOnePlugin"></plugin>
     <!-- 生成一对多配置 -->
     <!--<plugin type="cc.bandaotixi.plugins.OneToManyPlugin"></plugin>-->
-    <!--<plugin type="cc.bandaotixi.plugins.BatchInsertPlugin"></plugin>-->
+    <!--<plugin type="cc.bandaotixi.plugins.OldBatchInsertPlugin"></plugin>-->
     <!--<plugin type="cc.bandaotixi.plugins.BatchUpdatePlugin"></plugin>-->
 
     <!--<commentGenerator >-->

@@ -3,8 +3,29 @@
  */
 package org.asia.mybatis.generator.plugins;
 
-import java.util.ArrayList;
-import java.util.Iterator;
+import org.mybatis.generator.api.IntrospectedColumn;
+import org.mybatis.generator.api.IntrospectedTable;
+import org.mybatis.generator.api.IntrospectedTable.TargetRuntime;
+import org.mybatis.generator.api.PluginAdapter;
+import org.mybatis.generator.api.dom.OutputUtilities;
+import org.mybatis.generator.api.dom.java.*;
+import org.mybatis.generator.api.dom.xml.Attribute;
+import org.mybatis.generator.api.dom.xml.Document;
+import org.mybatis.generator.api.dom.xml.TextElement;
+import org.mybatis.generator.api.dom.xml.XmlElement;
+import org.mybatis.generator.codegen.mybatis3.MyBatis3FormattingUtilities;
+import org.mybatis.generator.config.GeneratedKey;
+
+import java.util.*;
+
+/**
+ * @author csz
+ * 
+ * 插件，在生成的代码中，增加批量写入的功能； 2014.2.11 ；
+ * 仅对 mybatis 有效；
+ */
+import static org.mybatis.generator.internal.util.messages.Messages.getString;
+
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -12,8 +33,6 @@ import java.util.TreeSet;
 import org.mybatis.generator.api.IntrospectedColumn;
 import org.mybatis.generator.api.IntrospectedTable;
 import org.mybatis.generator.api.PluginAdapter;
-import org.mybatis.generator.api.IntrospectedTable.TargetRuntime;
-import org.mybatis.generator.api.dom.OutputUtilities;
 import org.mybatis.generator.api.dom.java.FullyQualifiedJavaType;
 import org.mybatis.generator.api.dom.java.Interface;
 import org.mybatis.generator.api.dom.java.JavaVisibility;
@@ -24,251 +43,105 @@ import org.mybatis.generator.api.dom.xml.Attribute;
 import org.mybatis.generator.api.dom.xml.Document;
 import org.mybatis.generator.api.dom.xml.TextElement;
 import org.mybatis.generator.api.dom.xml.XmlElement;
-import org.mybatis.generator.codegen.mybatis3.MyBatis3FormattingUtilities;
-import org.mybatis.generator.config.GeneratedKey;
 
-/**
- * @author csz
- * 
- * 插件，在生成的代码中，增加批量写入的功能； 2014.2.11 ；
- * 仅对 mybatis 有效；
- */
-public class BatchInsertPlugin extends PluginAdapter {
-	
-	private final static String METHOD_NAME = "insertBatch";
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.mybatis.generator.api.Plugin#validate(java.util.List)
-	 */
-	@Override
-	public boolean validate(List<String> warnings) {
-		// TODO Auto-generated method stub
-		return true;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.mybatis.generator.api.PluginAdapter#clientGenerated(org.mybatis.generator.api.dom.java.Interface,
-	 *      org.mybatis.generator.api.dom.java.TopLevelClass,
-	 *      org.mybatis.generator.api.IntrospectedTable)
-	 */
-	@Override
-	public boolean clientGenerated(Interface interfaze,
-			TopLevelClass topLevelClass, IntrospectedTable introspectedTable) {
-		// TODO Auto-generated method stub
-
-		if (introspectedTable.getTargetRuntime() == TargetRuntime.MYBATIS3) {
-			addInsertMethod(interfaze,introspectedTable);
-		}
-
-		return super.clientGenerated(interfaze, topLevelClass,
-				introspectedTable);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.mybatis.generator.api.PluginAdapter#sqlMapDocumentGenerated(org.mybatis.generator.api.dom.xml.Document,
-	 *      org.mybatis.generator.api.IntrospectedTable)
-	 */
-	@Override
-	public boolean sqlMapDocumentGenerated(Document document,
-			IntrospectedTable introspectedTable) {
-		// TODO Auto-generated method stub
-		if(introspectedTable.getTargetRuntime() == TargetRuntime.MYBATIS3){
-			addElements(document.getRootElement(),introspectedTable);
-		}
-		return super.sqlMapDocumentGenerated(document, introspectedTable);
-	}
-	
-	
-	/**
-	 * SQL-Mapping 文件中增加的 id为 insertBatch的批量写入
-	 * 
-	 * <insert id="addTrainRecordBatch" useGeneratedKeys="true" parameterType="java.util.List">  
-    <selectKey resultType="long" keyProperty="id" order="AFTER">  
-        SELECT  
-        LAST_INSERT_ID()  
-    </selectKey>  
-    insert into t_train_record (add_time,emp_id,activity_id,flag)   
-    values  
-    <foreach collection="list" item="item" index="index" separator="," >  
-        (#{item.addTime},#{item.empId},#{item.activityId},#{item.flag})  
-    </foreach>  
-</insert>  
-	 * @param parentElement
-	 * @param introspectedTable
-	 */
-	private void addElements(XmlElement parentElement,IntrospectedTable introspectedTable) {
-		XmlElement answer = new XmlElement("insert"); //$NON-NLS-1$
-
-        answer.addAttribute(new Attribute(
-                "id", METHOD_NAME)); //$NON-NLS-1$
-
-        FullyQualifiedJavaType parameterType;
-        /*if (isSimple) {
-            parameterType = new FullyQualifiedJavaType(
-                    introspectedTable.getBaseRecordType());
-        } else {*/
-            parameterType = introspectedTable.getRules()
-                    .calculateAllFieldsClass();
-        /*}*/
-
-        answer.addAttribute(new Attribute("parameterType", //$NON-NLS-1$
-                parameterType.getFullyQualifiedName()));
-
-        context.getCommentGenerator().addComment(answer);
-
-        GeneratedKey gk = introspectedTable.getGeneratedKey();
-        if (gk != null) {
-            IntrospectedColumn introspectedColumn = introspectedTable
-                    .getColumn(gk.getColumn());
-            // if the column is null, then it's a configuration error. The
-            // warning has already been reported
-            if (introspectedColumn != null) {
-                if (gk.isJdbcStandard()) {
-                    answer.addAttribute(new Attribute(
-                            "useGeneratedKeys", "true")); //$NON-NLS-1$ //$NON-NLS-2$
-                    answer.addAttribute(new Attribute(
-                            "keyProperty", introspectedColumn.getJavaProperty())); //$NON-NLS-1$
-                } else {
-                    answer.addElement(getSelectKey(introspectedColumn, gk));
-                }
-            }
-        }
-
-        StringBuilder insertClause = new StringBuilder();
-        StringBuilder valuesClause = new StringBuilder();
-
-        insertClause.append("insert into "); //$NON-NLS-1$
-        insertClause.append(introspectedTable
-                .getFullyQualifiedTableNameAtRuntime());
-        insertClause.append(" ("); //$NON-NLS-1$
-
-        valuesClause.append("values <foreach collection=\"list\" item=\"item\" index=\"index\" separator=\",\" > ("); //$NON-NLS-1$
-          
-        //(#{item.addTime},#{item.empId},#{item.activityId},#{item.flag})  
-    
-        List<String> valuesClauses = new ArrayList<String>();
-        Iterator<IntrospectedColumn> iter = introspectedTable.getAllColumns()
-                .iterator();
-        while (iter.hasNext()) {
-            IntrospectedColumn introspectedColumn = iter.next();
-            if (introspectedColumn.isIdentity()) {
-                // cannot set values on identity fields
-                continue;
-            }
-
-            insertClause.append(MyBatis3FormattingUtilities
-                    .getEscapedColumnName(introspectedColumn));
-            
-            // 批量插入,如果是sequence字段,则插入不需要item.前缀
-            if(introspectedColumn.isSequenceColumn()) {
-            	valuesClause.append(MyBatis3FormattingUtilities
-            			.getParameterClause(introspectedColumn));
-            } else {
-            	valuesClause.append(MyBatis3FormattingUtilities
-            			.getParameterClause(introspectedColumn,"item."));
-            }
-            if (iter.hasNext()) {
-                insertClause.append(", "); //$NON-NLS-1$
-                valuesClause.append(", "); //$NON-NLS-1$
-            }
-
-            if (valuesClause.length() > 80) {
-                answer.addElement(new TextElement(insertClause.toString()));
-                insertClause.setLength(0);
-                OutputUtilities.xmlIndent(insertClause, 1);
-
-                valuesClauses.add(valuesClause.toString());
-                valuesClause.setLength(0);
-                OutputUtilities.xmlIndent(valuesClause, 1);
-            }
-        }
-
-        insertClause.append(')');
-        answer.addElement(new TextElement(insertClause.toString()));
-
-        valuesClause.append(")</foreach>");
-        valuesClauses.add(valuesClause.toString());
-
-        for (String clause : valuesClauses) {
-            answer.addElement(new TextElement(clause));
-        }
-        
-        parentElement.addElement(answer);
-        /*
-        if (context.getPlugins().sqlMapInsertElementGenerated(answer,
-                introspectedTable)) {
-            parentElement.addElement(answer);
-        }*/
-    }
-	
-	/**
-     * This method should return an XmlElement for the select key used to
-     * automatically generate keys.
-     * 
-     * @param introspectedColumn
-     *            the column related to the select key statement
-     * @param generatedKey
-     *            the generated key for the current table
-     * @return the selectKey element
+public class BatchInsertPlugin extends PluginAdapter{
+    /**
+     * 修改Mapper类
      */
-    protected XmlElement getSelectKey(IntrospectedColumn introspectedColumn,
-            GeneratedKey generatedKey) {
-        String identityColumnType = introspectedColumn
-                .getFullyQualifiedJavaType().getFullyQualifiedName();
-
-        XmlElement answer = new XmlElement("selectKey"); //$NON-NLS-1$
-        answer.addAttribute(new Attribute("resultType", identityColumnType)); //$NON-NLS-1$
-        answer.addAttribute(new Attribute(
-                "keyProperty", introspectedColumn.getJavaProperty())); //$NON-NLS-1$
-        answer.addAttribute(new Attribute("order", //$NON-NLS-1$
-                generatedKey.getMyBatis3Order())); 
-        
-        answer.addElement(new TextElement(generatedKey
-                        .getRuntimeSqlStatement()));
-
-        return answer;
+    @Override
+    public boolean clientGenerated(Interface interfaze, TopLevelClass topLevelClass, IntrospectedTable introspectedTable) {
+        addBatchInsertMethod(interfaze, introspectedTable);
+        return super.clientGenerated(interfaze, topLevelClass, introspectedTable);
     }
-    
-    
-    private void addInsertMethod(Interface interfaze, IntrospectedTable introspectedTable){
-    	Set<FullyQualifiedJavaType> importedTypes = new TreeSet<FullyQualifiedJavaType>();
-        Method method = new Method();
+    /**
+     * 修改Mapper.xml
+     */
+    @Override
+    public boolean sqlMapDocumentGenerated(Document document, IntrospectedTable introspectedTable) {
+        addBatchInsertSelectiveXml(document, introspectedTable);
+        return super.sqlMapDocumentGenerated(document, introspectedTable);
+    }
+    @Override
+    public boolean validate(List<String> warnings) {
+        return true;
+    }
+    private void addBatchInsertMethod(Interface interfaze, IntrospectedTable introspectedTable) {
+        // 设置需要导入的类
+        Set<FullyQualifiedJavaType> importedTypes = new TreeSet<FullyQualifiedJavaType>();
+        importedTypes.add(FullyQualifiedJavaType.getNewListInstance());
+        importedTypes.add(new FullyQualifiedJavaType(introspectedTable.getBaseRecordType()));
 
-        method.setReturnType(new FullyQualifiedJavaType("void"));
-        method.setVisibility(JavaVisibility.PUBLIC);
-        method.setName(METHOD_NAME);
+        Method ibsmethod = new Method();
+        // 1.设置方法可见性
+        ibsmethod.setVisibility(JavaVisibility.PUBLIC);
+        // 2.设置返回值类型
+        FullyQualifiedJavaType ibsreturnType = FullyQualifiedJavaType.getIntInstance();// int型
+        ibsmethod.setReturnType(ibsreturnType);
+        // 3.设置方法名
+        ibsmethod.setName("insertBatchSelective");
+        // 4.设置参数列表
+        FullyQualifiedJavaType paramType = FullyQualifiedJavaType.getNewListInstance();
+        FullyQualifiedJavaType paramListType;
+        if (introspectedTable.getRules().generateBaseRecordClass()) {
+            paramListType = new FullyQualifiedJavaType(introspectedTable.getBaseRecordType());
+        } else if (introspectedTable.getRules().generatePrimaryKeyClass()) {
+            paramListType = new FullyQualifiedJavaType(introspectedTable.getPrimaryKeyType());
+        } else {
+            throw new RuntimeException(getString("RuntimeError.12")); //$NON-NLS-1$
+        }
+        paramType.addTypeArgument(paramListType);
 
-        FullyQualifiedJavaType parameterType;
-       /* if (isSimple) {
-            parameterType = new FullyQualifiedJavaType(
-                    introspectedTable.getBaseRecordType());
-        } else {*/
-            parameterType = introspectedTable.getRules()
-                    .calculateAllFieldsClass();
-        //}
+        ibsmethod.addParameter(new Parameter(paramType, "records"));
 
-        importedTypes.add(parameterType);
-        
-        FullyQualifiedJavaType listParamType = new FullyQualifiedJavaType("java.util.List<"+parameterType+">");
-        
-        method.addParameter(new Parameter(listParamType, "recordLst")); //$NON-NLS-1$
-
-        context.getCommentGenerator().addGeneralMethodComment(method,
-                introspectedTable);
-
-       // addMapperAnnotations(interfaze, method);
         interfaze.addImportedTypes(importedTypes);
-        interfaze.addMethod(method);
-        /*if (context.getPlugins().clientInsertMethodGenerated(method, interfaze,
-                introspectedTable)) {
-            interfaze.addImportedTypes(importedTypes);
-            interfaze.addMethod(method);
-        }*/
+        interfaze.addMethod(ibsmethod);
     }
+    public void addBatchInsertSelectiveXml(Document document, IntrospectedTable introspectedTable) {
+        List<IntrospectedColumn> columns = introspectedTable.getAllColumns();
+        //获得要自增的列名
+        String incrementField = introspectedTable.getTableConfiguration().getProperties().getProperty("incrementField");
+        if(incrementField!=null){
+            incrementField = incrementField.toUpperCase();
+        }
+        XmlElement javaPropertyAndDbType = new XmlElement("trim");
+        javaPropertyAndDbType.addAttribute(new Attribute("prefix", " ("));
+        javaPropertyAndDbType.addAttribute(new Attribute("suffix", ")"));
+        javaPropertyAndDbType.addAttribute(new Attribute("suffixOverrides", ","));
+
+        XmlElement insertBatchElement = new XmlElement("insert");
+        insertBatchElement.addAttribute(new Attribute("id", "insertBatchSelective"));
+        insertBatchElement.addAttribute(new Attribute("parameterType", "java.util.List"));
+
+        XmlElement trim1Element = new XmlElement("trim");
+        trim1Element.addAttribute(new Attribute("prefix", "("));
+        trim1Element.addAttribute(new Attribute("suffix", ")"));
+        trim1Element.addAttribute(new Attribute("suffixOverrides", ","));
+        for (IntrospectedColumn introspectedColumn : columns) {
+            String columnName = introspectedColumn.getActualColumnName();
+            if(!columnName.toUpperCase().equals(incrementField)){//不是自增字段的才会出现在批量插入中
+                XmlElement iftest=new XmlElement("if");
+                iftest.addAttribute(new Attribute("test","list[0]."+introspectedColumn.getJavaProperty()+"!=null"));
+                iftest.addElement(new TextElement(columnName+","));
+                trim1Element.addElement(iftest);
+                XmlElement trimiftest=new XmlElement("if");
+                trimiftest.addAttribute(new Attribute("test","item."+introspectedColumn.getJavaProperty()+"!=null"));
+                trimiftest.addElement(new TextElement("#{item." + introspectedColumn.getJavaProperty() + ",jdbcType=" + introspectedColumn.getJdbcTypeName() + "},"));
+                javaPropertyAndDbType.addElement(trimiftest);
+            }
+        }
+
+        XmlElement foreachElement = new XmlElement("foreach");
+        foreachElement.addAttribute(new Attribute("collection", "list"));
+        foreachElement.addAttribute(new Attribute("index", "index"));
+        foreachElement.addAttribute(new Attribute("item", "item"));
+        foreachElement.addAttribute(new Attribute("separator", ","));
+        insertBatchElement.addElement(new TextElement("insert into " + introspectedTable.getAliasedFullyQualifiedTableNameAtRuntime()));
+        insertBatchElement.addElement(trim1Element);
+        insertBatchElement.addElement(new TextElement(" values "));
+        foreachElement.addElement(javaPropertyAndDbType);
+        insertBatchElement.addElement(foreachElement);
+
+        document.getRootElement().addElement(insertBatchElement);
+    }
+
 }
